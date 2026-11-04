@@ -612,9 +612,13 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
             latest = s.scalars(
                 select(Result).where(Result.study_id == study_id).order_by(Result.created_at.desc())
             ).first()
+            anns = [
+                {"id": a.id, "polygon": a.polygon, "note": a.note, "created_at": a.created_at.isoformat()}
+                for a in s.scalars(select(Annotation).where(Annotation.study_id == study_id)).all()
+            ]
         ev_path = paths.evaluation_dir() / "evaluation.json"
         ev = json.loads(ev_path.read_text(encoding="utf-8")) if ev_path.exists() else None
-        rep = build_report(so, latest.payload if latest else None, ev)
+        rep = build_report(so, latest.payload if latest else None, ev, anns)
         fname = f"ovascope-report-{study_id[:8]}"
         if format == "md":
             return PlainTextResponse(

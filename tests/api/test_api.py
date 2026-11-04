@@ -177,6 +177,11 @@ def test_annotations_are_bounded_and_labelled_manual(api_factory, no_model_engin
         sid = _upload(client).json()["id"]
         ok = client.post(f"/api/v1/studies/{sid}/annotations", json={"polygon": [[10, 10], [100, 10], [50, 80]]})
         assert ok.status_code == 201 and ok.json()["used_by_automatic_pipeline"] is False
+        rep = client.get(f"/api/v1/studies/{sid}/report?format=json").json()
+        assert (
+            len(rep["researcher_annotations"]["items"]) == 1
+            and "not model output" in rep["researcher_annotations"]["note"]
+        )
         bad = client.post(f"/api/v1/studies/{sid}/annotations", json={"polygon": [[10, 10], [9999, 10], [50, 80]]})
         assert bad.status_code == 422 and bad.json()["code"] == "ANNOTATION_OUT_OF_BOUNDS"
 
