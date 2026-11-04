@@ -67,13 +67,13 @@ function EvaluationBody({ ev, audit, mirror }: { ev: Evaluation; audit: Record<s
           <p className="text-muted">Early-stage analysis: {ev.early_stage?.reason}</p>
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-ink">Test class distribution (n = {sc.n_test})</h2>
+          <h2 className="text-sm font-semibold text-ink">Test class distribution (n = {sc.n_test}; bars relative to the largest class)</h2>
           <ul className="mt-2 space-y-1">
             {Object.entries(sc.test_class_distribution).map(([k, n]) => (
               <li key={k} className="grid grid-cols-[minmax(0,1fr)_160px_32px] items-center gap-2 text-sm">
                 <span className="truncate text-ink-2">{categoryDisplay(k)}</span>
                 <span className="h-2 rounded-full bg-line" aria-hidden>
-                  <span className="block h-2 rounded-full bg-accent-mark" style={{ width: `${(n / sc.n_test) * 100 * 3}%`, maxWidth: "100%" }} />
+                  <span className="block h-2 rounded-full bg-accent-mark" style={{ width: `${(n / Math.max(...Object.values(sc.test_class_distribution))) * 100}%` }} />
                 </span>
                 <span className="tabular text-right">{n}</span>
               </li>
