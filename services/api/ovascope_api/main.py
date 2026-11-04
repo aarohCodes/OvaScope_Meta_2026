@@ -298,6 +298,7 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
         age = None if hb is None else (datetime.now(UTC) - _aware(hb.last_seen)).total_seconds()
         provs = [ProviderOut(**{k: v for k, v in st.__dict__.items()}) for st in eng.statuses()]
         provs.append(ProviderOut(**store.status().__dict__))
+        mm = eng.multimodal.status()
         b = eng.bundle.meta if (eng.bundle and eng.mode() == "RESEARCH_INFERENCE") else None
         return CapabilitiesOut(
             notice=RESEARCH_NOTICE,
@@ -325,7 +326,14 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
             external_transmission={
                 "allowed": False,
                 "policy": "fail closed",
-                "reason": "No authorised hosted provider is configured; all inference runs locally.",
+                "reason": "Images never leave this server; all model inference runs locally.",
+                "structured_results_to_meta_model_api": mm.available,
+                "structured_results_detail": (
+                    "Optional narrative text: minimised structured result fields (no image, IDs or hashes) "
+                    "may be sent to the Meta Model API with per-call consent."
+                    if mm.available
+                    else "Disabled: " + (mm.reason_unavailable or "not configured")
+                ),
             },
             retention={
                 "hours": settings.retention_hours,
@@ -333,8 +341,9 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
                 "its jobs, results, annotations and stored artifacts immediately",
             },
             budget={
-                "hosted_provider_monthly_cap_usd": settings.monthly_provider_budget_usd,
-                "hosted_calls_enabled": False,
+                "hosted_provider_monthly_cap_usd": float(mm.details.get("monthly_budget_usd", 0.0)),
+                "hosted_provider_spent_this_month_usd": float(mm.details.get("spent_this_month_usd", 0.0)),
+                "hosted_calls_enabled": mm.available,
             },
             active_bundle=None
             if b is None
@@ -616,9 +625,16 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
                 {"id": a.id, "polygon": a.polygon, "note": a.note, "created_at": a.created_at.isoformat()}
                 for a in s.scalars(select(Annotation).where(Annotation.study_id == study_id)).all()
             ]
+            narr_row = s.scalars(
+                select(Artifact)
+                .where(Artifact.study_id == study_id, Artifact.kind == "narrative")
+                .order_by(Artifact.created_at.desc())
+            ).first()
+            narrative = json.loads(store.get(narr_row.storage_key)) if narr_row else None
         ev_path = paths.evaluation_dir() / "evaluation.json"
         ev = json.loads(ev_path.read_text(encoding="utf-8")) if ev_path.exists() else None
         rep = build_report(so, latest.payload if latest else None, ev, anns)
+        rep["narrative"] = narrative
         fname = f"ovascope-report-{study_id[:8]}"
         if format == "md":
             return PlainTextResponse(
@@ -635,6 +651,70 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
                 },
             )
         return JSONResponse(rep)
+
+    def _narrative_inputs(study_id: str) -> tuple[dict[str, Any], dict[str, Any] | None]:
+        with sf() as s:
+            _study(s, study_id)
+            latest = s.scalars(
+                select(Result).where(Result.study_id == study_id).order_by(Result.created_at.desc())
+            ).first()
+        if latest is None:
+            raise api_error(409, "NO_RESULT", "Run an analysis before requesting a narrative.")
+        ev_path = paths.evaluation_dir() / "evaluation.json"
+        ev = json.loads(ev_path.read_text(encoding="utf-8")) if ev_path.exists() else None
+        rep = build_report({"id": study_id}, latest.payload, ev)
+        return latest.payload, rep.get("evaluation_summary")
+
+    @v1.get("/studies/{study_id}/narrative/preview")
+    def narrative_preview(study_id: str) -> dict[str, Any]:
+        from ovascope_ml.providers.meta_model_api import minimize
+
+        payload, ev_summary = _narrative_inputs(study_id)
+        st = get_engine().multimodal.status()
+        return {"provider": ProviderOut(**st.__dict__).model_dump(), "would_send": minimize(payload, ev_summary)}
+
+    @v1.post("/studies/{study_id}/narrative", status_code=201)
+    def create_narrative(study_id: str, body: dict[str, Any]) -> dict[str, Any]:
+        from dataclasses import asdict
+
+        from ovascope_ml.providers.base import ProviderError
+        from ovascope_ml.providers.meta_model_api import MetaModelApiNarrator, minimize
+
+        if body.get("consent_external_transmission") is not True:
+            raise api_error(
+                400, "CONSENT_REQUIRED", "Explicit consent is required before sending data to a hosted provider."
+            )
+        eng = get_engine()
+        provider = eng.multimodal
+        st = provider.status()
+        if not st.available or not isinstance(provider, MetaModelApiNarrator):
+            raise api_error(
+                409, "PROVIDER_UNAVAILABLE", st.reason_unavailable or "No narrative provider is configured."
+            )
+        payload, ev_summary = _narrative_inputs(study_id)
+        try:
+            narrative = provider.narrate(minimize(payload, ev_summary))
+        except ProviderError as exc:
+            raise api_error(502, exc.code, str(exc)) from None
+        out = {
+            **asdict(narrative),
+            "created_at": datetime.now(UTC).isoformat(),
+            "note": "Narrative text only; scores, masks and status are unchanged.",
+        }
+        data = json.dumps(out).encode()
+        with sf() as s:
+            key = store.put(study_id, data, "application/json")
+            s.add(
+                Artifact(
+                    study_id=study_id,
+                    kind="narrative",
+                    storage_key=key,
+                    media_type="application/json",
+                    sha256=hashlib.sha256(data).hexdigest(),
+                )
+            )
+            s.commit()
+        return out
 
     app.include_router(v1)
     return app

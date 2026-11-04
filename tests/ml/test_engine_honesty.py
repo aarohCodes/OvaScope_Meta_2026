@@ -106,7 +106,7 @@ def test_segmentation_failure_never_yields_a_mask_and_fallback_is_labelled(synth
 
 
 def test_provider_timeout_is_explicit(synthetic_engine):
-    out = synthetic_engine(sam_delay=2.0, timeout=0.2).analyze(geometric_png(), "s1")
+    out = synthetic_engine(sam_delay=5.0, timeout=0.5).analyze(geometric_png(), "s1")
     assert out.result.segmentation.status == "timeout"
     assert "segmentation_mask" not in {a.kind for a in out.artifacts}
 

@@ -48,7 +48,7 @@ from ovascope_ml.models.geometry import expand_box, mask_bbox
 from ovascope_ml.models.heads import LinearHead
 from ovascope_ml.models.localizer import LocalizerParams, PatchLocalizer
 from ovascope_ml.providers.base import ProviderError, ProviderStatus
-from ovascope_ml.providers.multimodal import DisabledMultimodalProvider
+from ovascope_ml.providers.meta_model_api import make_multimodal_provider
 from ovascope_ml.providers.sam import Sam2BoxRefiner
 
 log = logging.getLogger("ovascope.engine")
@@ -182,7 +182,7 @@ class AnalysisEngine:
         sam_key = bundle.meta["segmentation"]["sam_key"] if bundle else "sam2.1_hiera_tiny"
         multimask = bundle.meta["segmentation"]["multimask_output"] if bundle else False
         self.sam = sam or Sam2BoxRefiner(sam_key, multimask_output=multimask)
-        self.multimodal = DisabledMultimodalProvider()
+        self.multimodal = make_multimodal_provider()
         self._lock = threading.Lock()
 
     @classmethod

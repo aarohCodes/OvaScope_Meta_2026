@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import Field, SecretStr, field_validator
@@ -49,6 +51,36 @@ class Settings(BaseSettings):
                 raise RuntimeError("Refusing to start: wildcard CORS is not allowed in public deployment.")
 
 
+ENV_KEYS_PREFIX = "OVASCOPE_"
+ENV_KEYS_EXTRA = {"MODEL_API_KEY"}  # Meta Model API key name used by Meta's docs
+
+
+def load_env_file(path: Path | None = None) -> list[str]:
+    """Load allow-listed keys from the repo's .env into os.environ (existing values win).
+
+    Returns the key NAMES loaded (never values). Only OVASCOPE_* keys and MODEL_API_KEY are read.
+    """
+    env_path = path or Path(os.environ.get("OVASCOPE_ENV_FILE", str(paths.REPO_ROOT / ".env")))
+    if not env_path.is_file():
+        return []
+    loaded = []
+    for raw in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = (part.strip() for part in line.split("=", 1))
+        if key.startswith("export "):
+            key = key[len("export ") :].strip()
+        if not (key.startswith(ENV_KEYS_PREFIX) or key in ENV_KEYS_EXTRA) or key in os.environ:
+            continue
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        os.environ[key] = value
+        loaded.append(key)
+    return loaded
+
+
 @lru_cache
 def get_settings() -> Settings:
+    load_env_file()
     return Settings()

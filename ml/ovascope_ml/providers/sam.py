@@ -13,8 +13,11 @@ Weights are loaded with local_files_only=True; nothing is downloaded at inferenc
 
 from __future__ import annotations
 
+import functools
+import importlib.util
 import threading
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -28,6 +31,16 @@ from ovascope_ml.providers.base import ProviderError, ProviderStatus, ProviderUn
 class SamMask:
     mask: np.ndarray  # (H, W) bool
     predicted_iou: float  # SAM's own IoU estimate; NOT a validated quality measure
+
+
+@functools.lru_cache(maxsize=1)
+def _sam2_module_present() -> bool:
+    """Check that transformers ships SAM 2 without importing the model code (that costs seconds)."""
+    # Top-level find_spec locates the package without executing it (dotted names would import parents).
+    spec = importlib.util.find_spec("transformers")
+    if spec is None or not spec.origin:
+        return False
+    return (Path(spec.origin).parent / "models" / "sam2" / "modeling_sam2.py").exists()
 
 
 class Sam2BoxRefiner:
@@ -45,12 +58,7 @@ class Sam2BoxRefiner:
         return f"{self.spec.repo_id}@{self.spec.revision[:12]}"
 
     def status(self) -> ProviderStatus:
-        try:
-            import transformers
-
-            has_cls = hasattr(transformers, "Sam2Model")
-        except ImportError:
-            has_cls = False
+        has_cls = _sam2_module_present()
         missing = [f for f in self.spec.files if cached_weight_path(self.spec, f) is None]
         if not has_cls:
             return ProviderStatus(

@@ -169,6 +169,18 @@ export interface AnalysisResult {
   error: { code: string; message: string; retryable: boolean } | null;
 }
 
+export interface Narrative {
+  text: string;
+  limitations: string[];
+  source: "meta-model-api" | "template";
+  model_id: string | null;
+  validated: boolean;
+  fallback_reason: string | null;
+  usage: Record<string, number>;
+  estimated_cost_usd: number;
+  created_at: string;
+}
+
 export interface ApiErrorBody {
   code: string;
   message: string;

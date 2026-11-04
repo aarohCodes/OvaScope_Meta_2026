@@ -123,6 +123,17 @@ def render_markdown(rep: dict[str, Any]) -> str:
     else:
         L += ["- No evaluation artifact applies to this result."]
     L += ["", "## Processing times (ms)", ""] + [f"- {k}: {v}" for k, v in r.get("processing_times", {}).items()]
+    nar = rep.get("narrative")
+    if nar:
+        src = f"{nar['model_id']} via Meta Model API" if nar["source"] == "meta-model-api" else "deterministic template"
+        L += [
+            "",
+            "## Narrative summary",
+            "",
+            f"- Source: {src}; validated: {nar['validated']}"
+            + (f"; fallback reason: {nar['fallback_reason']}" if nar.get("fallback_reason") else ""),
+            f"- {nar['text']}",
+        ] + [f"- Limitation: {x}" for x in nar.get("limitations", [])]
     ann = rep.get("researcher_annotations", {}).get("items", [])
     L += ["", "## Researcher annotations (manual, not model output)", ""]
     L += [

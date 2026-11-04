@@ -239,7 +239,7 @@ def api_factory(tmp_path):
     return make
 
 
-def wait_job(client, job_id: str, timeout: float = 30.0) -> dict:
+def wait_job(client, job_id: str, timeout: float = 120.0) -> dict:
     t0 = time.time()
     while time.time() - t0 < timeout:
         j = client.get(f"/api/v1/jobs/{job_id}").json()

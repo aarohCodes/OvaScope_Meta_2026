@@ -6,6 +6,8 @@ import type {
   Capabilities,
   EvaluationResponse,
   Job,
+  Narrative,
+  Provider,
   Study,
 } from "./types";
 
@@ -61,6 +63,14 @@ export const api = {
       headers: opts.idempotencyKey ? { "Idempotency-Key": opts.idempotencyKey } : undefined,
     }),
   job: (id: string) => request<Job>(`/api/v1/jobs/${id}`),
+  narrativePreview: (id: string) =>
+    request<{ provider: Provider; would_send: Record<string, unknown> }>(`/api/v1/studies/${id}/narrative/preview`),
+  createNarrative: (id: string) =>
+    request<Narrative>(`/api/v1/studies/${id}/narrative`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ consent_external_transmission: true }),
+    }),
   cancelJob: (id: string) => request<Job>(`/api/v1/jobs/${id}/cancel`, { method: "POST" }),
   results: (id: string) => request<{ study_id: string; results: AnalysisResult[] }>(`/api/v1/studies/${id}/results`),
   deleteStudy: (id: string) =>

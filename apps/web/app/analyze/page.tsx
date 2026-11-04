@@ -8,6 +8,7 @@ import type { AnalysisResult, Job } from "@/lib/types";
 import { ImageViewer, type OverlayLayer } from "@/components/ImageViewer";
 import { UploadDropzone } from "@/components/UploadDropzone";
 import { JobProgress } from "@/components/JobProgress";
+import { NarrativePanel } from "@/components/NarrativePanel";
 import {
   AttributionPanel,
   ClassificationPanel,
@@ -239,6 +240,7 @@ function Workspace({ studyId }: { studyId: string }) {
             <AttributionPanel result={result} />
             <QualityPanel result={result} />
             <ProvenancePanel result={result} />
+            <NarrativePanel studyId={studyId} hasResult={!!result} />
           </>
         )}
         <section className="panel space-y-3 p-4 text-sm no-print" aria-label="Study actions">

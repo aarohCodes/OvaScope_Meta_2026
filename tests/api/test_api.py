@@ -256,3 +256,26 @@ def test_security_headers_present(api_factory, no_model_engine):
         assert r.headers["x-frame-options"] == "DENY"
         assert "no-store" in r.headers["cache-control"]
         assert len(r.headers["x-request-id"]) >= 8
+
+
+def test_env_file_loader_is_allow_listed_and_never_overrides(tmp_path, monkeypatch):
+    from ovascope_api.settings import load_env_file
+
+    env = tmp_path / ".env"
+    env.write_text(
+        "# comment\nMODEL_API_KEY=LLM_secret\nOVASCOPE_META_MODEL='muse-spark-1.3'\n"
+        "OVASCOPE_RETENTION_HOURS=5\nAWS_SECRET_ACCESS_KEY=nope\nexport OVASCOPE_INFERENCE_MODE=no_model\n",
+        encoding="utf-8",
+    )
+    for k in ("MODEL_API_KEY", "OVASCOPE_META_MODEL", "OVASCOPE_INFERENCE_MODE", "AWS_SECRET_ACCESS_KEY"):
+        monkeypatch.delenv(k, raising=False)
+    monkeypatch.setenv("OVASCOPE_RETENTION_HOURS", "24")
+    loaded = load_env_file(env)
+    import os
+
+    assert set(loaded) == {"MODEL_API_KEY", "OVASCOPE_META_MODEL", "OVASCOPE_INFERENCE_MODE"}
+    assert os.environ["OVASCOPE_META_MODEL"] == "muse-spark-1.3"
+    assert os.environ["OVASCOPE_RETENTION_HOURS"] == "24"  # existing value wins
+    assert "AWS_SECRET_ACCESS_KEY" not in os.environ  # not allow-listed
+    for k in loaded:
+        monkeypatch.delenv(k, raising=False)
