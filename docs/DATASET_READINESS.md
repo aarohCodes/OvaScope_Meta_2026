@@ -87,3 +87,23 @@ by assumption.
 A dataset with (a) pseudonymous patient IDs, (b) histopathology including borderline and
 invasive histotypes, (c) FIGO stage, (d) documented consent/licence for model training, and
 (e) preferably more than one centre. None was available on this machine.
+
+## 7. Kaggle search for a dataset with patient IDs, histology and stage (2026-11-04)
+
+Searched via the Kaggle API ("ovarian ultrasound", "ovarian tumor ultrasound", "adnexal", "ovarian
+cancer ultrasound", "ovarian mass", "ovarian cyst ultrasound", "gynecologic ultrasound") and read each
+candidate's own metadata and file list. **None qualifies.**
+
+| Dataset | Content (from its metadata) | Verdict |
+|---|---|---|
+| `ucimachinelearning/ovarian-ultrasound-image-dataset` (CC0) | 6,879 images: healthy, dominant follicle, PCO, simple cyst, complex cyst | not ovarian masses; no patient IDs, histology or stage |
+| `samihamuntahamahin/ovarian-condition-dataset` (CC-BY-SA-4.0 tag) | 301 images from 301 women (Frontiers in Physiology 2025): normal, dominant follicle, PCO | conditions, not masses; no histology or stage |
+| `baizidmdashadzzaman/ovarian-ultrasound-dataset` | identical files to the previous entry | re-upload; licence unknown |
+| `turkertuncer/ovarian-cyst-dataset` (DbCL) | simple vs complex cyst (Acharya et al. 2018) | no patient IDs, histology or stage |
+| `gowtha69/ovarian-cancer-risk-and-detection-dataset` | 50,000 **synthetic** tabular profiles (stated in its description) | synthetic; never usable as medical evidence |
+| `datasetengineer/ovarian-cancer-risk-and-progression-data` | 200,100 "hourly patient records", tabular | implausible provenance (very likely synthetic); no images |
+| `orvile/mmotu-ovarian-ultrasound-images-dataset` | MMOTU mirror | same data already used |
+
+Realistic routes: (a) ask the MMOTU authors whether patient grouping IDs for OTU_2d can be shared
+(enables patient-level splits without new images); (b) an institutional collaboration with a
+data-use agreement. Until then, the early-stage extension stays blocked.

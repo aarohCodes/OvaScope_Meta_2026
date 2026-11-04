@@ -153,3 +153,23 @@ Evidence: arXiv 2207.06799v3 §III, Table I, figures; official code
 - Ruff owns formatting (line length 120); E501 is not linted separately.
 - At the user's request, work is committed and pushed frequently to
   github.com/aarohCodes/OvaScope_Meta_2026. Commit messages carry no AI attribution (user preference).
+
+## D-014 User decisions (2026-11-04)
+
+- MMOTU: the user confirmed local use is acceptable for the event (no redistribution; images stay
+  local). The open item in D-004 is closed for local use only.
+- GPU / Modal: not to be pursued. `infra/modal/` stays in the repo, disabled and never executed.
+- Kaggle: no dataset with patient IDs, histology and stage exists for ovarian-mass ultrasound
+  (`docs/DATASET_READINESS.md` section 7). Early-stage extension remains blocked.
+
+## D-015 Meta language/multimodal provider (2026-11-04)
+
+- Meta's former Llama API docs (`llama.developer.meta.com/docs`) now redirect to the Meta Model API
+  (`dev.meta.ai/docs`). Documented: base `https://api.meta.ai/v1`, OpenAI-compatible
+  `POST /chat/completions`, `Authorization: Bearer $MODEL_API_KEY`; models include `muse-spark-1.3`
+  and a hosted `sam-3.1`. No Llama model IDs are listed.
+- Standard-mode content is "not used to train Meta models"; `-contributor` variants "may be used to
+  train", so they are refused by the adapter.
+- Scope: narrative summaries of verified structured results only, never images, with per-call consent,
+  output validation and a deterministic template fallback. Hosted SAM 3.1 would require uploading
+  images and is **not** enabled without separate explicit authorisation.
