@@ -151,4 +151,5 @@ Evidence: arXiv 2207.06799v3 §III, Table I, figures; official code
 - ESLint 9.39.5 is reported by npm as past its support window; kept because eslint-config-next 16.4
   targets ESLint 9. Dev-only. TypeScript 5.9.3 (not 7.0) for tooling compatibility.
 - Ruff owns formatting (line length 120); E501 is not linted separately.
-- No git commit has been made without the user's request (see final report).
+- At the user's request, work is committed and pushed frequently to
+  github.com/aarohCodes/OvaScope_Meta_2026. Commit messages carry no AI attribution (user preference).
