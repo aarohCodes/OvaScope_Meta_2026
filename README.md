@@ -17,6 +17,32 @@ and are shown separately, each labelled with its source, model identifier and li
 Without a trained, integrity-checked model bundle, the app runs in **NO_MODEL** mode and returns
 `model_unavailable` with no score.
 
+## How an analysis flows
+
+```mermaid
+flowchart LR
+  U[PNG/JPEG upload] --> V[Validation: size, magic bytes,<br/>bomb guard, full decode]
+  V -->|invalid| X[unsupported_input]
+  V --> M{Integrity-checked<br/>bundle + local weights?}
+  M -->|no| NM[model_unavailable<br/>no score, exact missing requirement]
+  M -->|yes| D[DINOv2 ViT-S/14<br/>448 px letterbox]
+  D --> L[Patch-token localiser<br/>dev-trained, dev-thresholded]
+  L -->|no candidate| F[whole-image fallback<br/>labelled]
+  L -->|box prompt| S[SAM 2.1 tiny<br/>box -> mask]
+  S -->|fail/timeout| F
+  S --> R[ROI crop -> DINOv2 224 px]
+  D --> C[Linear head<br/>temperature-scaled scores]
+  R --> C
+  F --> C
+  C --> A{Top score below<br/>frozen threshold?}
+  A -->|yes| AB[abstained]
+  A -->|no| OK[completed / with warnings]
+  C --> AT[Attribution: linear patch decomposition]
+```
+
+Segmentation (SAM mask), classifier scores and attribution are separate outputs with separate
+provenance. Test labels and reference masks are only ever read by `ml/ovascope_ml/evaluation`.
+
 ## What is where
 
 ```
