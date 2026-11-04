@@ -6,7 +6,7 @@ RUN npm ci --no-audit --no-fund
 
 FROM node:22.20.0-alpine AS build
 WORKDIR /web
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 NEXT_OUTPUT=standalone
 COPY --from=deps /web/node_modules ./node_modules
 COPY apps/web ./
 RUN npm run build

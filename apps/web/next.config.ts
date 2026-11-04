@@ -23,7 +23,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone output only for the Docker image (infra/docker/web.Dockerfile sets NEXT_OUTPUT);
+  // local `next start` (used by Playwright) needs the default output.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   poweredByHeader: false,
   reactStrictMode: true,
   async headers() {
