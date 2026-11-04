@@ -1,0 +1,49 @@
+# --- Medical images, datasets and anything derived per image: NEVER commit ---
+data/
+artifacts/
+*.dcm
+*.nii
+*.nii.gz
+# image files anywhere except the explicit non-medical test fixtures and web assets
+*.jpg
+*.jpeg
+*.JPG
+*.JPEG
+*.png
+*.PNG
+!tests/fixtures/geometric/*.png
+!apps/web/public/*.png
+
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Python ---
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# --- Node / web ---
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/blob-report/
+*.tsbuildinfo
+next-env.d.ts
+
+# --- OS / editors ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

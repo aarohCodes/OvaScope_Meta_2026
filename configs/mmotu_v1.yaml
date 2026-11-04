@@ -1,0 +1,52 @@
+# OvaScope experiment configuration: MMOTU OTU_2d, frozen Meta backbones + linear heads.
+# Every selection below uses development data only (grouped CV). Test labels are read
+# exclusively by `ovascope-ml evaluate`, after selection.json is frozen.
+experiment_id: mmotu-otu2d-v1
+seed: 20261104
+
+dataset:
+  adapter: mmotu
+  manifest: data/processed/manifest_mmotu_otu2d_v1.json
+
+cv:
+  n_folds: 5
+  grouping: near_duplicate_cluster   # patient IDs are not available in MMOTU
+
+backbone:
+  key: dinov2_vits14
+  img_size: 448
+
+roi:
+  img_size: 224
+  margin: 0.15
+
+localizer:
+  C: 1.0
+  samples_per_image: 128             # per class (positive / negative patches)
+  positive_fraction: 0.5             # patch is positive if >= 50% of its pixels are in the reference mask
+  thresholds: [0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70]
+  smooth_sigma: 0.75
+  min_component_patches: 4
+
+sam:
+  key: sam2.1_hiera_tiny
+  multimask_output: false            # SAM convention for unambiguous (box) prompts
+
+classifier:
+  C_grid: [0.001, 0.003, 0.01, 0.03, 0.1, 0.3]
+  class_weight: balanced
+  selection_metric: balanced_accuracy  # pre-specified primary metric for mmotu8
+
+abstention:
+  target_dev_coverage: 0.90          # abstain on the least-confident ~10% (dev OOF)
+
+hgs_threshold:
+  method: youden_dev_oof
+
+novelty:
+  pca_components: 32
+  dev_percentile: 99.0
+
+bootstrap:
+  n_resamples: 2000
+  seed: 7

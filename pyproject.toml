@@ -1,0 +1,91 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ovascope"
+version = "0.1.0"
+description = "OvaScope research prototype for ovarian/adnexal ultrasound analysis. Research prototype. Not for diagnosis, screening, or treatment decisions."
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "numpy==2.2.6",
+  "pillow==11.3.0",
+  "pydantic==2.11.7",
+  "pydantic-settings==2.10.1",
+  "pyyaml==6.0.2",
+  "scipy==1.15.3",
+  "scikit-learn==1.7.2",
+]
+
+[project.optional-dependencies]
+api = [
+  "fastapi==0.116.1",
+  "uvicorn==0.35.0",
+  "sqlalchemy==2.0.43",
+  "alembic==1.16.5",
+  "psycopg[binary]==3.2.9",
+  "python-multipart==0.0.20",
+]
+# CPU wheels for torch/torchvision come from https://download.pytorch.org/whl/cpu
+ml = [
+  "torch==2.8.0",
+  "torchvision==0.23.0",
+  "timm==1.0.19",
+  "transformers==4.56.2",
+  "safetensors==0.6.2",
+  "huggingface-hub==0.34.4",
+]
+dev = [
+  "pytest==8.4.1",
+  "httpx==0.28.1",
+  "ruff==0.12.12",
+  "mypy==1.17.1",
+  "types-PyYAML==6.0.12.20250822",
+]
+
+[project.scripts]
+ovascope-ml = "ovascope_ml.cli:main"
+ovascope-worker = "ovascope_worker.main:main"
+
+[tool.setuptools.packages.find]
+where = ["services/api", "services/worker", "ml"]
+include = ["ovascope_api*", "ovascope_worker*", "ovascope_ml*"]
+
+[tool.setuptools.package-data]
+ovascope_api = ["migrations/*.ini", "migrations/**/*.py", "migrations/*.mako"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+  "slow: loads real model weights (DINOv2/SAM); skipped unless OVASCOPE_RUN_SLOW=1",
+  "data: requires the local MMOTU dataset; skipped when absent",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+extend-exclude = ["apps/web", "data", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "S", "SIM"]
+ignore = ["S101", "B008", "E501"]  # E501: line length is owned by `ruff format`
+
+[tool.ruff.lint.isort]
+known-first-party = ["ovascope_ml", "ovascope_api", "ovascope_worker", "conftest"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S", "E501"]
+"tasks.py" = ["S603", "S607"]  # task runner intentionally spawns processes
+
+[tool.mypy]
+python_version = "3.11"
+mypy_path = "ml:services/api:services/worker"
+explicit_package_bases = true
+ignore_missing_imports = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+packages = ["ovascope_api", "ovascope_worker", "ovascope_ml"]
