@@ -1,6 +1,7 @@
 # --- Medical images, datasets and anything derived per image: NEVER commit ---
-data/
-artifacts/
+# Anchored to the repo root: an unanchored `data/` also matched ml/ovascope_ml/data/ (source code).
+/data/
+/artifacts/
 *.dcm
 *.nii
 *.nii.gz
