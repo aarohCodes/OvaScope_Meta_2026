@@ -62,6 +62,7 @@ function EvaluationBody({ ev, audit, mirror }: { ev: Evaluation; audit: Record<s
             <strong className="text-warn-ink">{String(sc.patient_independent)}</strong>
           </p>
           <p className="text-warn-ink">{sc.statement}</p>
+          <p className="font-medium text-warn-ink">{sc.external_validation}</p>
           <p>{sc.cohort_note}</p>
           <p className="text-muted">{sc.ci_note}</p>
           <p className="text-muted">Early-stage analysis: {ev.early_stage?.reason}</p>
@@ -365,6 +366,7 @@ function SegmentationSection({ seg }: { seg: Record<string, any> }) { // eslint-
       <p className="text-xs text-muted">
         {seg.reference}. {seg.failure_counting}. SAM model: <span className="font-mono">{seg.sam_model}</span>.
       </p>
+      <div className="max-w-3xl">
       <DotCIChart
         title="Mean Dice, all test images (no interval; see table for median and IQR)"
         rows={[
@@ -373,6 +375,7 @@ function SegmentationSection({ seg }: { seg: Record<string, any> }) { // eslint-
           { id: "o", label: "Oracle box → SAM 2.1", point: seg.all_test_images.sam_oracle.dice.mean, ci: [seg.all_test_images.sam_oracle.dice.p25, seg.all_test_images.sam_oracle.dice.p75], muted: true, note: "reference-mask box: upper bound" },
         ]}
       />
+      </div>
       <p className="text-xs text-muted">Whiskers in this chart show the interquartile range of per-image Dice, not a confidence interval.</p>
       <DataTable
         columns={["Subset", "n", "Candidate rate", "Localiser Dice mean/median", "SAM auto Dice mean/median", "SAM oracle-prompt Dice mean/median"]}

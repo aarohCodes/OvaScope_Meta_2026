@@ -6,7 +6,7 @@ export const REPO = path.resolve(__dirname, "../../..");
 export const FIXTURE = path.join(REPO, "tests", "fixtures", "geometric", "ellipse_400x300.png");
 export const MODE = process.env.E2E_MODE === "research" ? "research" : "no_model";
 
-export async function uploadFixture(page: Page, file = FIXTURE) {
+export async function uploadFixture(page: Page, file: string = FIXTURE) {
   await page.goto("/analyze");
   await page.getByTestId("file-input").setInputFiles(file);
   await page.waitForURL(/\/analyze\?study=[a-f0-9]{32}/);

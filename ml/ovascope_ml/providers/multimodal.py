@@ -17,10 +17,10 @@ import os
 from ovascope_ml.providers.base import OptionalMultimodalProvider, ProviderStatus, ProviderUnavailable
 
 REQUIRED_CONFIG = (
-    "OVASCOPE_MULTIMODAL_PROVIDER (name of a documented provider adapter)",
-    "the provider's documented endpoint and model identifier",
-    "server-side credentials",
-    "written authorisation that the data may be transmitted to that provider",
+    "OVASCOPE_MULTIMODAL_PROVIDER=meta_model_api",
+    "MODEL_API_KEY (from the Meta Model API dashboard, dev.meta.ai)",
+    "OVASCOPE_EXTERNAL_TRANSMISSION=structured_results_only",
+    "OVASCOPE_MONTHLY_PROVIDER_BUDGET_USD > 0 (see .env.example)",
 )
 
 
@@ -38,7 +38,7 @@ class DisabledMultimodalProvider(OptionalMultimodalProvider):
             available=False,
             execution="none",
             reason_unavailable=reason,
-            action_required="Provide: " + "; ".join(REQUIRED_CONFIG),
+            action_required="Optional. To enable Meta Muse Spark narratives set: " + "; ".join(REQUIRED_CONFIG),
             details={"report_text": "deterministic template"},
         )
 

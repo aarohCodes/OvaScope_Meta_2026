@@ -12,7 +12,8 @@ test("capture pages", async ({ page }) => {
     await page.waitForLoadState("networkidle");
     await page.screenshot({ path: `test-results/screens/${MODE}-${name}.png`, fullPage: true });
   }
-  await uploadFixture(page);
+  // SCREENSHOT_IMAGE: optional local research image for review (screenshots are git-ignored).
+  await uploadFixture(page, process.env.SCREENSHOT_IMAGE);
   await expect(page.getByTestId("result-status")).toBeVisible({ timeout: 120_000 });
   await page.screenshot({ path: `test-results/screens/${MODE}-workspace.png`, fullPage: true });
 });
