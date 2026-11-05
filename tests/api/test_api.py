@@ -288,3 +288,12 @@ def test_comma_separated_cors_from_env_file(tmp_path):
     env.write_text("OVASCOPE_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000\n", encoding="utf-8")
     s = Settings(_env_file=str(env))
     assert s.cors_origins == ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+
+def test_empty_api_token_means_no_token():
+    from ovascope_api.settings import Settings
+
+    assert Settings(_env_file=None, api_token="").api_token is None
+    assert Settings(_env_file=None, api_token="   ").api_token is None
+    with pytest.raises(RuntimeError, match="requires OVASCOPE_API_TOKEN"):
+        Settings(_env_file=None, deployment="public", api_token="").assert_safe()

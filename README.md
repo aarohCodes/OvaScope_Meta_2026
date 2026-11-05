@@ -128,6 +128,10 @@ docker compose up --build
 
 All ports bind to `127.0.0.1`. Weights are mounted read-only from your Hugging Face cache, and
 `artifacts/` (bundles, evaluation) is mounted read-only.
+Verified on this machine: web → API proxy, PostgreSQL, separate worker container, RESEARCH_INFERENCE
+with the mounted bundle, upload → analysis → result → deletion. Postgres fixes its password when the
+`pgdata` volume is first created; if you change `POSTGRES_PASSWORD`, run `docker compose down -v`
+(this deletes the local database and stored studies).
 
 ## Tests
 

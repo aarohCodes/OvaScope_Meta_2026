@@ -34,6 +34,14 @@ class Settings(BaseSettings):
     external_transmission_allowed: bool = False  # no authorised hosted provider exists; fail closed
     monthly_provider_budget_usd: float = 0.0  # hosted providers disabled; budget cap enforced as zero
 
+    @field_validator("api_token", mode="before")
+    @classmethod
+    def _empty_token_is_none(cls, v: object) -> object:
+        # Compose passes unset variables as "" (OVASCOPE_API_TOKEN=${OVASCOPE_API_TOKEN:-}); treat as no token.
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None
+        return v
+
     @field_validator("cors_origins", mode="before")
     @classmethod
     def _split(cls, v: object) -> object:
