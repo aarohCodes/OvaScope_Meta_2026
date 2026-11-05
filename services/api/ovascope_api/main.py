@@ -341,8 +341,8 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
                 "its jobs, results, annotations and stored artifacts immediately",
             },
             budget={
-                "hosted_provider_monthly_cap_usd": float(mm.details.get("monthly_budget_usd", 0.0)),
-                "hosted_provider_spent_this_month_usd": float(mm.details.get("spent_this_month_usd", 0.0)),
+                "hosted_provider_monthly_cap_usd": _num(mm.details.get("monthly_budget_usd")),
+                "hosted_provider_spent_this_month_usd": _num(mm.details.get("spent_this_month_usd")),
                 "hosted_calls_enabled": mm.available,
             },
             active_bundle=None
@@ -718,6 +718,10 @@ def create_app(settings: Settings | None = None, engine: AnalysisEngine | None =
 
     app.include_router(v1)
     return app
+
+
+def _num(v: object) -> float:
+    return float(v) if isinstance(v, int | float) else 0.0
 
 
 def _aware(dt: datetime) -> datetime:
