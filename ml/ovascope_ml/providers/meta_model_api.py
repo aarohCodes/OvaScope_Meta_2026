@@ -180,6 +180,22 @@ def template_narrative(sent: dict[str, Any]) -> tuple[str, list[str]]:
     return s + " " + RESEARCH_NOTICE, ["Image-level evaluation on a single dataset; external validation not performed."]
 
 
+def _http_error(exc: urllib.error.HTTPError, key: str | None) -> tuple[str, str]:
+    """Typed error with Meta's own message (redacted, truncated); never includes the key."""
+    detail = ""
+    try:
+        err = json.loads(exc.read().decode("utf-8", errors="replace")).get("error", {})
+        detail = str(err.get("message", ""))[:300]
+    except (ValueError, AttributeError, OSError):
+        pass
+    if key:
+        detail = detail.replace(key, "[key]")
+    code = {401: "PROVIDER_AUTH", 402: "PROVIDER_BILLING", 403: "PROVIDER_FORBIDDEN", 429: "PROVIDER_RATE_LIMITED"}.get(
+        exc.code, "PROVIDER_FAILED"
+    )
+    return code, f"Meta Model API returned HTTP {exc.code}" + (f": {detail}" if detail else "")
+
+
 class _Budget:
     def __init__(self, path: Path, monthly_cap_usd: float) -> None:
         self.path, self.cap = path, monthly_cap_usd
@@ -314,7 +330,7 @@ class MetaModelApiNarrator(OptionalMultimodalProvider):
             with urllib.request.urlopen(req, timeout=self.timeout_s) as resp:  # noqa: S310 - HTTPS enforced above
                 data = json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
-            raise ProviderError("PROVIDER_FAILED", f"Meta Model API returned HTTP {exc.code}") from None
+            raise ProviderError(*_http_error(exc, self._key)) from None
         except (urllib.error.URLError, TimeoutError) as exc:
             raise ProviderError("PROVIDER_TIMEOUT", f"Meta Model API unreachable ({type(exc).__name__})") from None
         usage = data.get("usage") or {}

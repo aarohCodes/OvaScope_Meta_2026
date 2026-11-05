@@ -279,3 +279,12 @@ def test_env_file_loader_is_allow_listed_and_never_overrides(tmp_path, monkeypat
     assert "AWS_SECRET_ACCESS_KEY" not in os.environ  # not allow-listed
     for k in loaded:
         monkeypatch.delenv(k, raising=False)
+
+
+def test_comma_separated_cors_from_env_file(tmp_path):
+    from ovascope_api.settings import Settings
+
+    env = tmp_path / ".env"
+    env.write_text("OVASCOPE_CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000\n", encoding="utf-8")
+    s = Settings(_env_file=str(env))
+    assert s.cors_origins == ["http://localhost:3000", "http://127.0.0.1:3000"]

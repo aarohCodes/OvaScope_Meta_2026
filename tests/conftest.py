@@ -230,8 +230,11 @@ def api_factory(tmp_path):
 
     def make(engine, **overrides):
         opts = {"inline_worker": True, **overrides}
-        s = Settings(
-            database_url=f"sqlite:///{(tmp_path / 'api.db').as_posix()}", artifact_dir=str(tmp_path / "store"), **opts
+        s = Settings(  # _env_file=None: tests never read the developer's .env
+            _env_file=None,
+            database_url=f"sqlite:///{(tmp_path / 'api.db').as_posix()}",
+            artifact_dir=str(tmp_path / "store"),
+            **opts,
         )
         app = create_app(s, engine=engine)
         return TestClient(app), app

@@ -5,10 +5,10 @@ from __future__ import annotations
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from pydantic import Field, SecretStr, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 from ovascope_ml import paths
 
@@ -20,7 +20,8 @@ class Settings(BaseSettings):
     api_token: SecretStr | None = None
     database_url: str = Field(default_factory=lambda: f"sqlite:///{(paths.data_dir() / 'ovascope.db').as_posix()}")
     artifact_dir: str = Field(default_factory=lambda: str(paths.data_dir() / "artifact_store"))
-    cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    # NoDecode: let the validator split "a,b" instead of the env source JSON-decoding it.
+    cors_origins: Annotated[list[str], NoDecode] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     max_upload_bytes: int = 20 * 1024 * 1024
     max_image_pixels: int = 40_000_000
     retention_hours: int = 24

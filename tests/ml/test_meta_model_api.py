@@ -167,3 +167,23 @@ def test_api_requires_consent_and_labels_narrative(api_factory, synthetic_engine
         caps = client.get("/api/v1/capabilities").json()
         assert caps["external_transmission"]["allowed"] is False  # images never leave
         assert caps["external_transmission"]["structured_results_to_meta_model_api"] is True
+
+
+def test_billing_error_is_typed_and_redacted(tmp_path, monkeypatch):
+    import urllib.error
+
+    def raise_402(req, timeout=None):
+        body = io.BytesIO(
+            json.dumps(
+                {"error": {"code": "billing_not_configured", "message": "Billing verification failed for LLM_test."}}
+            ).encode()
+        )
+        raise urllib.error.HTTPError(req.full_url, 402, "Payment Required", {}, body)
+
+    monkeypatch.setattr(mm.urllib.request, "urlopen", raise_402)
+    n = narrator(tmp_path)
+    with pytest.raises(ProviderError) as e:
+        n.narrate(mm.minimize(RESULT, None))
+    assert e.value.code == "PROVIDER_BILLING" and "Billing verification failed" in str(e.value)
+    assert "LLM_test" not in str(e.value)
+    assert n.budget.spent() == 0.0  # failed calls are not charged to the budget
