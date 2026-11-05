@@ -193,3 +193,14 @@ Evidence: arXiv 2207.06799v3 §III, Table I, figures; official code
   (n=413, without). Headline metrics must be quoted with this caveat.
 - Train/inference parity verified: the deployed engine reproduces `predictions_test.csv` exactly
   (`test_live_engine_reproduces_evaluated_predictions`).
+
+## D-017 Deployment and live-provider verification (2026-11-05)
+
+- Docker Compose verified end to end on this machine (images: api/worker 2.16 GB, web 325 MB).
+  Two start-up bugs found only by running the stack and fixed with tests: comma-separated
+  `OVASCOPE_CORS_ORIGINS` crashed settings parsing; Compose's empty `OVASCOPE_API_TOKEN` forced
+  authentication on every request.
+- Meta Model API: the user's key authenticates (`GET /v1/models` lists `muse-spark-1.3` and
+  `sam-3.1`), but chat completions return HTTP 402 `billing_not_configured` until billing is set up
+  for the team. The adapter now surfaces this as `PROVIDER_BILLING` with Meta's message; no text is
+  substituted. The key was pasted in chat, so the user was advised to rotate it.
