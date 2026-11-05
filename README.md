@@ -17,6 +17,35 @@ and are shown separately, each labelled with its source, model identifier and li
 Without a trained, integrity-checked model bundle, the app runs in **NO_MODEL** mode and returns
 `model_unavailable` with no score.
 
+## Held-out results (image level; read the caveats)
+
+MMOTU OTU_2d official test split, 469 images, evaluated once after selection was frozen on
+development data. Image-level, single centre, **not patient-independent; external validation not
+performed.** Full report: `docs/generated/EVALUATION_REPORT.md`.
+
+| Model | Balanced accuracy (95% CI) | Macro AUROC (95% CI) |
+|---|---|---|
+| Majority class | 0.125 | 0.500 |
+| Hand-crafted features | 0.394 (0.341-0.448) | 0.761 (0.726-0.795) |
+| ImageNet ResNet-50 (frozen) | 0.514 (0.462-0.572) | 0.833 (0.799-0.867) |
+| **DINOv2 whole image (deployed; chosen on development data)** | **0.482 (0.428-0.540)** | **0.841 (0.809-0.872)** |
+| DINOv2 + automatic SAM 2.1 ROI | 0.523 (0.464-0.584) | 0.843 (0.812-0.874) |
+| Oracle: DINOv2 + expert-mask ROI (upper bound) | 0.577 (0.520-0.635) | 0.889 (0.860-0.916) |
+
+What the Meta components did, measured honestly:
+
+- **DINOv2** clearly beats hand-crafted features (+0.088 balanced accuracy, CI 0.027-0.154) but shows
+  **no clear difference** from a supervised ImageNet ResNet-50 (-0.032, CI -0.093 to 0.026).
+- **Adding the automatic SAM ROI** was **not shown to help** (+0.041, CI -0.000 to 0.085); development
+  data selected whole-image, and the deployed pathway was not changed after seeing test results.
+- **SAM 2.1 masks** from automatic boxes were **worse** than the DINOv2 localiser's own masks
+  (mean Dice 0.636 vs 0.730). Given an expert box, SAM reaches 0.789: the automatic prompt is the
+  bottleneck.
+- **Leakage warning:** test images with a development near-duplicate score 0.802 balanced accuracy
+  (n=56) vs 0.453 for the other 413. Headline numbers are inflated by near-duplicates.
+- "High grade serous" vs other: AUROC 0.815 (0.690-0.916) from only 15 positive images. Not a cancer
+  detector; no stage labels exist.
+
 ## How an analysis flows
 
 ```mermaid

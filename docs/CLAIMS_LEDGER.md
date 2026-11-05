@@ -27,3 +27,25 @@ from `artifacts/evaluation/evaluation.json` (rendered on the Evaluation page and
 | "Works on all ultrasound devices" | none: single centre | — | — | **no** |
 | "Prevents deaths", "no false negatives", "first ever" | none | — | — | **no** |
 | "Patient-level" or "external" validation | none: no patient IDs; single dataset | — | "External validation not performed." | **no** |
+
+## Measured results (experiment `mmotu-otu2d-v1`, MMOTU OTU_2d official test split, n = 469 images)
+
+All numbers are image-level, single-centre, not patient-independent; 95% CIs are image-level
+bootstrap and likely too narrow. Source: `artifacts/evaluation/evaluation.json` /
+`docs/generated/EVALUATION_REPORT.md`.
+
+| claim | supporting_artifact | scope | limitation | approved_for_pitch |
+|---|---|---|---|---|
+| The deployed model (DINOv2 ViT-S/14 whole image, chosen on development data) reached balanced accuracy 0.482 (95% CI 0.428–0.540) and macro AUROC 0.841 (0.809–0.872) across 8 MMOTU categories; chance balanced accuracy 0.125 | evaluation.json `models.dinov2_whole` | MMOTU test split, image level | inflated by near-duplicates: 0.802 on 56 test images with a development near-duplicate vs 0.453 on the other 413; not patient-independent; external validation not performed | yes, with the near-duplicate caveat stated alongside |
+| DINOv2 features beat hand-crafted intensity/texture features (+0.088 balanced accuracy, CI 0.027–0.154; +0.080 macro AUROC, CI 0.044–0.114) | ablations[1] | same | same | yes |
+| DINOv2 beats a supervised ImageNet ResNet-50 | ablations[0]: −0.032 balanced accuracy (CI −0.093 to 0.026); +0.008 macro AUROC (CI −0.020 to 0.037) | same | **no clear difference** | **no**: say "no clear difference from ResNet-50" |
+| Adding the automatic SAM region of interest improves classification | ablations[2]: +0.041 balanced accuracy (CI −0.000 to 0.085); +0.002 macro AUROC (CI −0.012 to 0.016) | same | CI includes 0; development data selected whole-image | **no**: say "not shown to help; development selection kept whole-image" |
+| SAM refinement improves the automatic mask | segmentation: SAM auto mean Dice 0.636 vs DINOv2 localiser 0.730 (difference −0.094, CI −0.116 to −0.072) | test split, against expert masks | SAM was **worse** than the localiser mask | **no** (negative result; report it) |
+| Given an expert box, SAM 2.1 reaches mean Dice 0.789 (median 0.907) | segmentation `sam_oracle` | test split | oracle prompt; not automatic | yes, labelled as an upper bound |
+| The automatic localiser finds a candidate region in 99.1% of test images (mean Dice 0.730) | segmentation `all_test_images` | test split | Dice for normal-ovary images measures the ovary outline | yes |
+| A reference-mask ROI (oracle) would reach balanced accuracy 0.577 (0.520–0.635) | models.oracle_dinov2_roi_gt | test split | uses expert masks at test time | yes, labelled as an upper bound |
+| Selective prediction: abstaining on 7% of test images (threshold frozen on development data) gives retained accuracy 0.585 vs 0.563 overall | models.dinov2_whole.abstention | test split | small gain; threshold is a heuristic | yes |
+| Top-label calibration error 0.026 on the test split | models.dinov2_whole.mmotu8.calibration | test split | scores are temperature-scaled outputs of class-balanced heads, not prevalence-calibrated probabilities | yes, as "top-label ECE 0.026"; never as "probability" |
+| "High grade serous" vs other: AUROC 0.815 (0.690–0.916) | models.dinov2_whole.hgs_vs_other | 15 positive test images | very wide CI; possibly few patients; one invasive histotype only; not a cancer detector | only as "AUROC for the MMOTU 'High grade serous' category, 15 positives"; **never** as "detects cancer" |
+| The live app reproduces the evaluated scores exactly | `test_live_engine_reproduces_evaluated_predictions` (max difference 0.0 on checked cases) | deployed bundle | spot check of held-out images | yes |
+| Colour Doppler / coloured-annotation images: balanced accuracy 0.398 (n=62) vs greyscale 0.491 (n=407) | sensitivity_analyses.colour_content | test split | subgroup, small n | yes, as a limitation |

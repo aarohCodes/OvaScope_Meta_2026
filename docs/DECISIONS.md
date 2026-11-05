@@ -173,3 +173,23 @@ Evidence: arXiv 2207.06799v3 §III, Table I, figures; official code
 - Scope: narrative summaries of verified structured results only, never images, with per-call consent,
   output validation and a deterministic template fallback. Hosted SAM 3.1 would require uploading
   images and is **not** enabled without separate explicit authorisation.
+
+## D-016 Held-out results and how they are reported (2026-11-05)
+
+- Selection was frozen at 2026-11-04T23:55:47Z (`selection.json`, `test_labels_read: false`) before
+  `ovascope-ml evaluate` read test labels.
+- Development OOF balanced accuracy: hand-crafted 0.366, ResNet-50 0.438, DINOv2 whole 0.510,
+  DINOv2 + localiser ROI 0.484, DINOv2 + SAM ROI 0.508, oracle ROI 0.562. Rule → primary pathway
+  `dinov2_whole`.
+- Test (n=469): DINOv2 whole 0.482 balanced accuracy (0.428–0.540); ResNet-50 0.514; SAM ROI 0.523.
+  On test the SAM-ROI pathway scored numerically higher than the deployed pathway, but the paired CI
+  includes 0 and the deployed pathway is **not** switched after seeing test results.
+- Segmentation: the automatic SAM mask (mean Dice 0.636) is worse than the DINOv2 localiser's
+  coarse mask (0.730); with the expert box SAM reaches 0.789. The deployed mask display remains the
+  pre-specified SAM output (the localiser prior is available as a separate overlay). Choosing the
+  displayed mask by test Dice would be test-driven selection. Next version: pre-register that choice
+  on development Dice (development SAM masks from out-of-fold boxes already exist).
+- Near-duplicate sensitivity analysis: 0.802 (n=56, with development near-duplicate) vs 0.453
+  (n=413, without). Headline metrics must be quoted with this caveat.
+- Train/inference parity verified: the deployed engine reproduces `predictions_test.csv` exactly
+  (`test_live_engine_reproduces_evaluated_predictions`).

@@ -66,6 +66,13 @@ Linear decomposition of the whole-image mean-patch-token term of the highest-sco
 (relative to the mean over categories). Exact for that linear term only; patch tokens are contextual,
 so it shows model sensitivity, not where disease is.
 
+## Measured performance (held-out, image level)
+
+Deployed pathway (DINOv2 whole image): balanced accuracy 0.482 (95% CI 0.428-0.540), macro AUROC
+0.841 (0.809-0.872), top-label ECE 0.026, 93% coverage at the frozen abstention threshold. Not
+clearly different from a supervised ResNet-50; the SAM ROI was not shown to help; automatic SAM masks
+(Dice 0.636) were worse than the localiser's (0.730). Details: `docs/generated/EVALUATION_REPORT.md`.
+
 ## Known limitations
 
 - Near-duplicate images span development and test (60 suspected cross-split pairs), and same-patient

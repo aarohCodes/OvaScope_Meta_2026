@@ -86,3 +86,27 @@ def test_mmotu_manifest_matches_published_counts():
     assert all(r.patient_id is None for r in m.records)  # never fabricated
     assert all(r.stage_if_available is None for r in m.records)
     assert m.source.patient_independent is False and m.source.external_api_transmission_authorized is False
+
+
+@pytest.mark.slow
+@slow
+@data
+def test_live_engine_reproduces_evaluated_predictions():
+    """The deployed engine must give the scores the held-out evaluation measured (train/inference parity)."""
+    import csv
+
+    from ovascope_ml.inference.pipeline import AnalysisEngine
+
+    exp = paths.experiments_dir() / "mmotu-otu2d-v1"
+    pred_file = exp / "predictions_test.csv"
+    if not pred_file.exists() or not (paths.bundles_dir() / "ACTIVE").exists():
+        pytest.skip("no evaluated experiment / active bundle")
+    eng = AnalysisEngine.from_environment()
+    primary = eng.bundle.meta["primary_pathway"]
+    rows = [r for r in csv.DictReader(pred_file.open(encoding="utf-8")) if r["variant"] == primary][:3]
+    for r in rows:
+        data = (paths.mmotu_root() / "OTU_2d" / "images" / f"{r['image_id'].removeprefix('mmotu2d-')}.JPG").read_bytes()
+        res = eng.analyze(data, "parity").result
+        ref = {k.removeprefix("score_"): float(v) for k, v in r.items() if k.startswith("score_")}
+        assert max(abs(res.model_score_or_null[k] - ref[k]) for k in ref) < 1e-5
+        assert (res.abstention_status == "abstained") == (r["abstained"] == "True")
