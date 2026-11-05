@@ -157,7 +157,7 @@ Measured on this machine: DINOv2 ViT-S/14 at 448 px ≈ 0.4-1.4 s/image; SAM 2.1
 |---|---|---|---|
 | DINOv2 ViT-S/14 (`timm/vit_small_patch14_dinov2.lvd142m`) | frozen | whole-image and ROI representation; patch tokens for localisation | provenance panel, model card, ablations |
 | SAM 2.1 Hiera-Tiny (`facebook/sam2.1-hiera-tiny`) | frozen | box-prompted mask refinement | segmentation panel and overlay, Dice table, ablations |
-| Llama / other Meta LLM | not configured | (would only rephrase verified results) | Settings: "unavailable" with what is needed |
+| Muse Spark 1.3 (Meta Model API, `muse-spark-1.3`) | hosted, Standard mode | optional narrative text from verified structured results only (never images); per-call consent; validated output with template fallback | workspace "Narrative summary" panel, exported report, Settings (spend vs cap) |
 
 The evaluation page answers "what changed when this Meta component was removed?" with paired
 bootstrap differences, including null or negative results.

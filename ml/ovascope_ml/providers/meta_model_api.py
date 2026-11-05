@@ -40,7 +40,10 @@ DEFAULT_MODEL = "muse-spark-1.3"
 DOCS_URL = "https://dev.meta.ai/docs/protocols/chat-completions"
 # Standard-mode prices per 1M tokens from dev.meta.ai/docs/pricing-rate-limits (2026-11-04).
 PRICE_PER_M = {"muse-spark-1.3": (1.25, 4.25), "muse-spark-1.2": (1.25, 4.25), "muse-spark-1.1": (1.25, 4.25)}
-MAX_OUTPUT_TOKENS = 400
+# Muse Spark is a reasoning model: reasoning tokens count toward max_completion_tokens.
+# reasoning_effort "minimal" (documented; "none" is rejected for Muse Spark) leaves room for the answer.
+MAX_OUTPUT_TOKENS = 1200
+REASONING_EFFORT = "minimal"
 
 FORBIDDEN = (
     "cancer",
@@ -66,12 +69,27 @@ FORBIDDEN = (
     "%",
 )
 
+# Exact negated disclaimers removed before the forbidden-term check (lower-case).
+ALLOWED_DISCLAIMERS = (
+    RESEARCH_NOTICE.lower(),
+    "not for diagnosis, screening, or treatment decisions",
+    "not for diagnosis, screening or treatment decisions",
+    "not for diagnosis",
+    "not a diagnosis",
+    "not diagnostic",
+    "not a risk estimate",
+    "not a personal risk estimate",
+    "not calibrated probabilities",
+    "not probabilities",
+)
+
 SYSTEM_PROMPT = (
     "You rewrite verified structured results from a research prototype into a short neutral paragraph "
     "for researchers. Rules: use only facts in the JSON; never add numbers; do not diagnose, do not say "
     "or imply that anyone has or lacks a disease; never mention risk, probability, stage, treatment, "
     "surgery or follow-up; call scores 'model scores'; mention that the result is from a research "
-    "prototype evaluated at image level without external validation. Respond with JSON only: "
+    "prototype evaluated at image level without external validation. Do not repeat the research notice; "
+    "the application always displays it. Respond with JSON only: "
     '{"summary": "<= 110 words", "limitations": ["<= 3 short items"]}'
 )
 
@@ -153,6 +171,8 @@ def validate_output(raw: str, sent: dict[str, Any]) -> tuple[str, list[str]] | s
     if not isinstance(lims, list) or len(lims) > 5 or not all(isinstance(x, str) and len(x) <= 300 for x in lims):
         return "limitations did not match the schema"
     joined = (summary + " " + " ".join(lims)).lower()
+    for allowed_phrase in ALLOWED_DISCLAIMERS:  # negated disclaimers are not claims
+        joined = joined.replace(allowed_phrase, " ")
     for term in FORBIDDEN:
         if term in joined:
             return f"output contained forbidden term '{term}'"
@@ -318,6 +338,7 @@ class MetaModelApiNarrator(OptionalMultimodalProvider):
                 {"role": "user", "content": json.dumps(sent, ensure_ascii=False)},
             ],
             "max_completion_tokens": MAX_OUTPUT_TOKENS,
+            "reasoning_effort": REASONING_EFFORT,
             "temperature": 0.2,
         }
         req = urllib.request.Request(  # noqa: S310 - scheme restricted to https in _problem()

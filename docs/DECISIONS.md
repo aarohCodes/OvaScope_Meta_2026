@@ -204,3 +204,15 @@ Evidence: arXiv 2207.06799v3 §III, Table I, figures; official code
   `sam-3.1`), but chat completions return HTTP 402 `billing_not_configured` until billing is set up
   for the team. The adapter now surfaces this as `PROVIDER_BILLING` with Meta's message; no text is
   substituted. The key was pasted in chat, so the user was advised to rotate it.
+
+## D-018 Live Meta Model API verification (2026-11-05)
+
+- After the user set up billing (and chose to keep the existing key), live calls succeed.
+- First live response was rejected by the validator: Muse Spark spent 398 of 400 output tokens on
+  reasoning. Fix: documented `reasoning_effort: "minimal"` and `max_completion_tokens` 1200.
+- Second response was rejected for "diagnos": the model repeated the research notice. Fix: exact
+  negated disclaimers are stripped before the forbidden-term check (affirmative claims still
+  rejected; tests cover both) and the prompt says not to repeat the notice.
+- Third response validated and was used; the full API path (preview, consent required, generate,
+  report) verified live. Cumulative spend $0.0136 against the app's $5 monthly cap. Meta offers only
+  spend alerts, not hard caps; the app-side cap is the hard stop for calls made by OvaScope.

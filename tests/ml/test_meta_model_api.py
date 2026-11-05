@@ -100,7 +100,8 @@ def test_valid_output_is_used_and_request_matches_documented_interface(tmp_path,
     assert out.source == "meta-model-api" and out.validated and out.model_id == "muse-spark-1.3"
     assert captured["url"] == "https://api.meta.ai/v1/chat/completions"
     assert captured["headers"]["Authorization"] == "Bearer LLM_test"
-    assert set(captured["body"]) == {"model", "messages", "max_completion_tokens", "temperature"}
+    assert set(captured["body"]) == {"model", "messages", "max_completion_tokens", "reasoning_effort", "temperature"}
+    assert captured["body"]["reasoning_effort"] == "minimal"
     assert "a" * 32 not in json.dumps(captured["body"])
     assert out.estimated_cost_usd == pytest.approx(1000 / 1e6 * 1.25 + 200 / 1e6 * 4.25)
     assert n.budget.spent() == pytest.approx(out.estimated_cost_usd)
@@ -187,3 +188,24 @@ def test_billing_error_is_typed_and_redacted(tmp_path, monkeypatch):
     assert e.value.code == "PROVIDER_BILLING" and "Billing verification failed" in str(e.value)
     assert "LLM_test" not in str(e.value)
     assert n.budget.spent() == 0.0  # failed calls are not charged to the budget
+
+
+@pytest.mark.parametrize(
+    "summary,ok",
+    [
+        (
+            "Research prototype. Not for diagnosis, screening, or treatment decisions. Teratoma scored 0.61 as a model score.",
+            True,
+        ),
+        (
+            "The highest model score was Teratoma at 0.61; this is not a diagnosis and scores are not calibrated probabilities.",
+            True,
+        ),
+        ("The patient was diagnosed with a teratoma according to the model output today.", False),
+        ("Treatment should follow because the model score for Teratoma was 0.61 here.", False),
+    ],
+)
+def test_negated_disclaimers_allowed_affirmative_claims_rejected(summary, ok):
+    sent = mm.minimize(RESULT, None)
+    out = mm.validate_output(json.dumps({"summary": summary, "limitations": []}), sent)
+    assert isinstance(out, tuple) is ok, out
